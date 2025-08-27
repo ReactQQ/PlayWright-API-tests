@@ -4,60 +4,6 @@ This repository contains a lightweight, maintainable API test framework for the 
 
 ---
 
-## Features
-
-* API requests via axios **central `apiClient`**
-* **Schema validation** with reusable helpers
-* **Response headers** validation
-* **Data-driven tests** for POST requests
-* **Error handling tests** (invalid IDs, malformed JSON, unsupported endpoints)
-* Supports **extra fields** in payloads
-* Ready for **CI integration** (e.g., Bitbucket Pipelines)
-
----
-
-## Known Issues
-
-* DELETE: JSONPlaceholder returns different cache-control ("no cache") than expected (max-age)
-* POST: Molformed request, returns "text/html; charset=utf-8" content-type
-
----
-
-## Limitations
-* Invalid payloads are **not rejected** (always returns 201) in JSONPlaceholder.
-* DELETE operations are simulated; resources are not actually removed.
-* Tests account for these quirks using flexible status assertions and console logs.
-* Header names are lowercase in Axios, even if the server sends them in uppercase.
-
----
-
-## Project Structure
-
-```
-PW-API-Tests/
-├── package.json
-├── package-lock.json
-├── playwright.config.ts
-├── README.md
-├── test-data/
-│   └── posts.json
-├── docs/
-│   └── test-cases.md
-├── tests/
-│   ├── dataDriven.spec.ts
-│   ├── errorHandling.spec.ts
-│   └── posts.spec.ts
-└── utils/
-│   ├── apiClient.ts
-│   ├── errorValidator.ts
-│   ├── headerValidator.ts
-│   └── schemaValidator.ts
-└── playwright-report/       (generated after running tests)
-
-```
-
----
-
 ## Setup
 
 1. **Install dependencies**
@@ -94,18 +40,44 @@ npx playwright test tests/posts.spec.ts
 npx playwright test --reporter=html
 ```
 
+## Project Structure
+
+```
+PW-API-Tests/
+├── package.json
+├── package-lock.json
+├── playwright.config.ts
+├── README.md
+├── test-data/
+│   └── posts.json
+├── docs/
+│   └── test-cases.md
+├── tests/
+│   ├── dataDriven.spec.ts
+│   ├── errorHandling.spec.ts
+│   └── posts.spec.ts
+└── utils/
+│   ├── apiClient.ts
+│   ├── errorValidator.ts
+│   ├── headerValidator.ts
+│   └── schemaValidator.ts
+└── playwright-report/       (generated after running tests)
+
+```
+
 ---
 
 ## Test Data Structure
 
-* Stored in `/test-data/posts.json`
+* Test data is stored in `/test-data/posts.json`
 * Used for **data-driven POST tests**
 * Each entry contains:
 
   * `title` (string)
   * `body` (string)
   * `userId` (number)
-* Example:
+
+Example:
 
 ```json
 [
@@ -134,13 +106,14 @@ npx playwright test --reporter=html
 
 ## Headers Validation
 
-* Response headers are validated in all main tests using a reusable helper `expectHeaders`.
+* Response headers are validated in main tests using a reusable helper `expectHeaders`.
 * Common headers checked:
 
   * `Content-Type` (should contain `application/json`)
   * `Cache-Control`
   * `Server`
 * The helper logs a warning if a header is missing.
+* For corner-case tests (e.g., DELETE, malformed JSON), header mismatches are logged but do not fail the test.
 
 Example usage:
 
@@ -184,24 +157,31 @@ expectErrorResponse(response, [200, 404])
 
 ---
 
-## Extra Fields Handling
+## Known Issues
 
-* Tests can send additional fields beyond the schema
-* Extra fields are checked separately using:
-
-```ts
-expect(response.data).toHaveProperty('extraField')
-```
+* DELETE: JSONPlaceholder returns different cache-control ("no cache") than expected (max-age)
+* POST: Molformed request, returns "text/html; charset=utf-8" content-type
 
 ---
 
-## Notes / Limitations
+## Limitations
 
-* JSONPlaceholder is a fake API:
+* Invalid payloads are **not rejected** (always returns 201) in JSONPlaceholder.
+* DELETE operations are simulated; resources are not actually removed.
+* Malformed JSON may be accepted and content-type may be HTML instead of JSON.
+* Some headers may not exist; tests log a warning but do not fail for missing headers.
+* Tests account for these quirks using flexible assertions and console logs.
 
-  * Invalid payloads are **not rejected** (always returns 201)
-  * DELETE operations are **simulated** and do not actually remove resources
-  * Malformed JSON may be accepted for demonstration purposes
 
-* These behaviors are documented in the tests using console logs
+---
 
+## Assumptions / Notes
+
+* JSONPlaceholder is a fake API; it simulates responses and does not enforce payload validation.
+* Tests are split into two categories:
+
+  * **Main CRUD tests**: Located in `posts.spec.ts` for positive scenarios.
+  * **Error handling / corner cases**: Located in `errorHandling.spec.ts` for invalid IDs, malformed JSON, unsupported methods, and invalid endpoints.
+* Malformed JSON, unsupported methods, and non-existent endpoints are handled safely.
+* Some tests skip content-type or schema checks when the API returns HTML instead of JSON.
+* Console logs document JSONPlaceholder quirks.
