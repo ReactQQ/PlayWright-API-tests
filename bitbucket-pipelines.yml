@@ -7,7 +7,7 @@ pipelines:
         caches:
           - node
         script:
-          - npm install
+          - npm ci
           - npx playwright install --with-deps
           - npx playwright test --reporter=dot,line,json,html
         artifacts:
