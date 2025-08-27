@@ -4,7 +4,6 @@ import { expectPostSchema } from '../utils/schemaValidator'
 import { expectHeaders } from '../utils/headerValidator'
 
 test.describe('Posts API - main tests', () => {
-
   test('GET /posts returns list of posts with headers and schema', async () => {
     const response = await apiClient.get('/posts')
 

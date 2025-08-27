@@ -61,7 +61,8 @@ PW-API-Tests/
 │   ├── errorValidator.ts
 │   ├── headerValidator.ts
 │   └── schemaValidator.ts
-└── playwright-report/       (generated after running tests)
+├── playwright-report/    // generated after running tests
+└── test-results/         // also generated
 
 ```
 
