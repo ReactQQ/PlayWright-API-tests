@@ -3,7 +3,8 @@ import apiClient from '../utils/apiClient'
 import { expectPostSchema } from '../utils/schemaValidator'
 import { expectHeaders } from '../utils/headerValidator'
 
-test.describe('Posts API - main tests', () => {
+test.describe('Posts API', () => {
+  
   test('GET /posts returns list of posts with headers and schema', async () => {
     const response = await apiClient.get('/posts')
 
@@ -14,7 +15,7 @@ test.describe('Posts API - main tests', () => {
       'server': /cloudflare|nginx/i
     })
 
-    response.data.forEach((post: any) => expectPostSchema(post))
+    response.data.forEach(expectPostSchema)
   })
 
   test('GET /posts/1 returns single post with headers and schema', async () => {
@@ -36,5 +37,16 @@ test.describe('Posts API - main tests', () => {
 
     expect(response.status).toBe(201)
     expect(response.data).toMatchObject(newPost)
+  })
+
+  test('DELETE /posts/1 returns 200', async () => {
+    const response = await apiClient.delete('/posts/1')
+
+    expect(response.status).toBe(200)
+    expectHeaders(response, {
+      'content-type': /application\/json/,
+      'cache-control': /max-age/,
+      'server': /cloudflare|nginx/i
+    })
   })
 })

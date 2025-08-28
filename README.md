@@ -1,160 +1,94 @@
-# Playwright API Automation Framework
+# Playwright API Tests
 
-This repository contains a lightweight, maintainable API test framework for the JSONPlaceholder public API using **Playwright** and **Axios**.
+This project contains API test automation for the [JSONPlaceholder](https://jsonplaceholder.typicode.com) fake REST API using **Playwright** and **Axios**.
+It validates endpoints, headers, schemas, and error handling in a maintainable way.
 
 ---
 
-## Setup
+## Installation
 
-1. **Install dependencies**
+1. Clone the repository:
+
+```bash
+git clone https://github.com/ReactQQ/PlayWright-API-tests.git
+cd PlayWright-API-Tests
+```
+
+2. Install dependencies:
 
 ```bash
 npm install
-```
-
-2. **Install Playwright browsers**
-
-```bash
-npx playwright install
 ```
 
 ---
 
 ## Running Tests
 
-* **Run all tests:**
+Run all tests:
 
 ```bash
 npx playwright test
 ```
 
-* **Run a single test file:**
-
-```bash
-npx playwright test tests/posts.spec.ts
-```
-
-* **Generate HTML report:**
+Run tests with HTML report:
 
 ```bash
 npx playwright test --reporter=html
 ```
 
+Open last report:
+
+```bash
+npx playwright show-report
+```
+
+---
+
 ## Project Structure
 
 ```
-PW-API-Tests/
-├── package.json
-├── package-lock.json
-├── playwright.config.ts
-├── README.md
-├── test-data/
-│   └── posts.json
-├── docs/
-│   └── test-cases.md
-├── tests/
-│   ├── dataDriven.spec.ts
-│   ├── errorHandling.spec.ts
-│   └── posts.spec.ts
-└── utils/
+.
+├── tests/              # Test specifications
+│   ├── posts.spec.ts
+│   ├── comments.spec.ts
+│   ├── profile.spec.ts
+│   ├── db.spec.ts
+│   └── errorHandling.spec.ts
+├── utils/              # Shared utilities (validators, clients, helpers)
 │   ├── apiClient.ts
+│   ├── schemaValidator.ts
 │   ├── errorValidator.ts
-│   ├── headerValidator.ts
-│   └── schemaValidator.ts
-├── playwright-report/    // generated after running tests
-└── test-results/         // also generated
-
+│   └── headerValidator.ts
+├── docs/
+│   └── test-cases.md   # Full list of test cases
+├── package.json
+└── README.md
 ```
 
 ---
 
-## Test Data Structure
+## Test Case Documentation
 
-* Test data is stored in `/test-data/posts.json`
-* Used for **data-driven POST tests**
-* Each entry contains:
-
-  * `title` (string)
-  * `body` (string)
-  * `userId` (number)
-
-Example:
-
-```json
-[
-  { "title": "Post A", "body": "Content A", "userId": 1 },
-  { "title": "Post B", "body": "Content B", "userId": 2 }
-]
-```
+All detailed test scenarios (positive, negative, and edge cases) are documented here:
+📄 [docs/test-cases.md](./docs/test-cases.md)
 
 ---
 
-## Schema Validation
+## Assumptions & Notes
 
-* `/utils/schemaValidator.ts` contains `expectPostSchema(post)`
-* Validates the following fields:
-
-| Field  | Type   |
-| ------ | ------ |
-| userId | number |
-| id     | number |
-| title  | string |
-| body   | string |
-
-* Extra fields are handled separately in tests
+* The API is **fake / mock**, so behavior may differ from real-world APIs.
+* Schema validation is simplified for readability.
+* Error handling tests are resilient to quirks (e.g., JSONPlaceholder returning HTML on error).
+* Headers may differ across environments (`cache-control`, `server`).
 
 ---
 
-## Headers Validation
+## Limitations
 
-* Response headers are validated in main tests using a reusable helper `expectHeaders`.
-* Common headers checked:
-
-  * `Content-Type` (should contain `application/json`)
-  * `Cache-Control`
-  * `Server`
-* The helper logs a warning if a header is missing.
-* For corner-case tests (e.g., DELETE, malformed JSON), header mismatches are logged but do not fail the test.
-
-Example usage:
-
-```ts
-expectHeaders(response, {
-  'content-type': /application\/json/,
-  'cache-control': /max-age/,
-  'server': /cloudflare|nginx/i
-})
-```
-
----
-
-## Error Handling
-
-* `/utils/errorValidator.ts` contains `expectErrorResponse(response, expectedStatus)`
-
-* Used in tests for:
-
-  * Invalid post IDs (`GET /posts/9999`)
-  * Malformed JSON payloads
-  * Unsupported endpoints or methods
-  * Returns correct HTTP response codes (400, 404, 500) or array of expected codes
-
-* Example:
-
-```ts
-expectErrorResponse(response, 404)
-expectErrorResponse(response, [200, 404])
-```
-
-* **Note:** JSONPlaceholder may not enforce payload validation; tests reflect that behavior.
-
----
-
-## Data-Driven Testing
-
-* Uses `/test-data/posts.json`
-* Each entry creates a separate POST request
-* Schema and headers are validated for each generated test
+* No write operations are persisted (`POST`, `PUT`, `DELETE` are mocked by the API).
+* Limited control over server response codes (some tests accept multiple possible status codes).
+* Invalid payloads are **not rejected** (always returns 201) in JSONPlaceholder.
+* Some headers may not exist; tests log a warning but do not fail for missing headers.
 
 ---
 
@@ -162,27 +96,42 @@ expectErrorResponse(response, [200, 404])
 
 * DELETE: JSONPlaceholder returns different cache-control ("no cache") than expected (max-age)
 * POST: Molformed request, returns "text/html; charset=utf-8" content-type
+* GET: 404 on /profile endpoint
 
 ---
 
-## Limitations
+## Continuous Integration (CI)
 
-* Invalid payloads are **not rejected** (always returns 201) in JSONPlaceholder.
-* DELETE operations are simulated; resources are not actually removed.
-* Malformed JSON may be accepted and content-type may be HTML instead of JSON.
-* Some headers may not exist; tests log a warning but do not fail for missing headers.
-* Tests account for these quirks using flexible assertions and console logs.
+This project includes automated testing with **GitHub Actions**. Every push or pull request to the `main` branch triggers the workflow, running all API tests and generating an HTML report.
 
+### GitHub Actions Workflow
 
----
+* File: `.github/workflows/playwright.yml`
+* Triggers: `push` and `pull_request` on `main`
+* Steps:
 
-## Assumptions / Notes
+  1. Checkout repository
+  2. Setup Node.js environment
+  3. Install dependencies (`npm ci`)
+  4. Install Playwright browsers (`npx playwright install --with-deps`)
+  5. Run tests (`npx playwright test --reporter=html`)
+  6. Upload HTML report as an artifact
 
-* JSONPlaceholder is a fake API; it simulates responses and does not enforce payload validation.
-* Tests are split into two categories:
+### Viewing the Report
 
-  * **Main CRUD tests**: Located in `posts.spec.ts` for positive scenarios.
-  * **Error handling / corner cases**: Located in `errorHandling.spec.ts` for invalid IDs, malformed JSON, unsupported methods, and invalid endpoints.
-* Malformed JSON, unsupported methods, and non-existent endpoints are handled safely.
-* Some tests skip content-type or schema checks when the API returns HTML instead of JSON.
-* Console logs document JSONPlaceholder quirks.
+1. Navigate to the **Actions** tab in your GitHub repository.
+2. Click the latest workflow run.
+3. Scroll down to **Artifacts** and download `playwright-report.zip`.
+4. Extract and open `index.html` to view the HTML report.
+
+### Bitbucket Pipelines (Optional)
+
+If you also use Bitbucket Pipelines:
+
+* File: `bitbucket-pipelines.yml`
+* Steps mirror the GitHub Actions workflow:
+
+  1. Install Node.js and dependencies
+  2. Install Playwright browsers
+  3. Run tests
+  4. Generate and upload HTML report
