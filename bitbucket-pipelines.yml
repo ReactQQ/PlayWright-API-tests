@@ -3,12 +3,20 @@ image: node:18
 pipelines:
   default:
     - step:
-        name: Run Playwright API Tests
+        name: Run Playwright tests
         caches:
           - node
         script:
           - npm ci
-          - npx playwright install --with-deps
-          - npx playwright test --reporter=dot,line,json,html || true 
+          # run tests but don't fail pipeline
+          - npx playwright test --reporter=dot,line,json,html || true
+          # ensure report is generated
+          - npx playwright show-report
         artifacts:
           - playwright-report/**
+    - step:
+        name: Upload HTML report
+        script:
+          # Replace with your upload method (example: echo, scp, artifact store)
+          - echo "Uploading Playwright HTML report..."
+          - ls -R playwright-report
